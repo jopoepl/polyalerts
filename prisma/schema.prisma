@@ -1,0 +1,54 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// TABLE 1: MARKET DETAILS (The "Phonebook")
+// Use this for your Onboarding Search. It's light and fast.
+model Market {
+  id               String         @id
+  question         String
+  slug             String         @unique
+  image            String?
+  active           Boolean        @default(true)
+  description      String?
+
+  // Arrays must be typed explicitly
+  outcomes         String[]       // e.g. ["YES", "NO"]
+  clobTokenIds     String[]       // e.g. ["123", "124"]
+
+  startDate        DateTime //startDateISo
+  endDate       DateTime //endDateIso
+
+  featured         Boolean        @default(false)
+  resolutionSource String
+
+  liquidity        Decimal        @db.Decimal(14, 4)
+  // Relation: A market has many price history entries
+  prices           PriceHistory[]
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+// TABLE 2: PRICE HISTORY (The "Archive")
+// This stores the massive list of timestamps and prices.
+model PriceHistory {
+  id        Int      @id @default(autoincrement())
+  
+  // The Foreign Key: Links this price to a specific Market
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  price     Float    // The 'p' from your JSON (e.g., 0.225)
+  timestamp Int      // The 't' from your JSON (Unix timestamp)
+
+  // Critical: This creates a specialized index so graphing is instant
+  @@index([marketId, timestamp])
+}
+
